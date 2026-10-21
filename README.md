@@ -23,7 +23,6 @@
 
 - 🐛 问题反馈 / 功能建议：[提交 Issue](https://github.com/MoeclubM/ARTEX/issues)
 - 🛠 代码共建：欢迎提交 [Pull Request](https://github.com/MoeclubM/ARTEX/pulls)
-- 💬 交流与社区：见文末 [交流与社区](#交流与社区)
 
 > 原 Docker 镜像源 `autumn27/artex` 已失效，现由本仓库自维护镜像 `mianhuatang11/artex`（Docker Hub）；拉取失败时可 `docker compose build` 从纯源码本地构建，无任何外部预编译依赖。
 >
