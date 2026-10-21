@@ -27,6 +27,7 @@ import {
 import { api } from "@/lib/api";
 import type { CoverageAssetRef, CoverageAssetRefs, CoverageGraphEdge, CoverageGraphNode } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
 // 每个父节点下、同一类型的子节点默认展示的数量；超出折叠，"展示更多"每次再拉这么多。
 const FOLD_LIMIT = 20;
@@ -240,17 +241,48 @@ function toG6Nodes(renderNodes: RenderNode[]): G6NodeDatum[] {
 // 回调形参用 unknown 满足 G6 签名，内部用 nd() 强转回我们的顶层结构。
 const nd = (d: unknown) => d as G6NodeDatum;
 
+// 画布配色跟随主题：浅色沿用原值，深色用与 Tailwind zinc 一致的暗调。
+// G6 画布是 Canvas，样式回调只能拿具体色值，不能直接用 CSS 变量。
+const CANVAS_THEMES = {
+  light: {
+    background: "#f0f2f7",
+    foldFill: "#f1f5f9",
+    outScopeFill: "#e2e8f0",
+    untestedFill: "#94a3b8",
+    foldStroke: "#94a3b8",
+    testedStroke: "#0f766e",
+    defaultStroke: "#64748b",
+    labelFill: "#475569",
+    labelBackgroundFill: "rgba(255,255,255,0.75)",
+    edgeStroke: "#cbd5e1",
+  },
+  dark: {
+    background: "#18181b",
+    foldFill: "#27272a",
+    outScopeFill: "#3f3f46",
+    untestedFill: "#52525b",
+    foldStroke: "#71717a",
+    testedStroke: "#34d399",
+    defaultStroke: "#a1a1aa",
+    labelFill: "#e4e4e7",
+    labelBackgroundFill: "rgba(24,24,27,0.82)",
+    edgeStroke: "#3f3f46",
+  },
+} as const;
+
+type CanvasPalette = (typeof CANVAS_THEMES)[keyof typeof CANVAS_THEMES];
+
 // 已测=实色高亮；范围内未测=灰；范围外/折叠=更淡的灰 + 虚线描边。
-function nodeFill(d: G6NodeDatum): string {
-  if (d.fold) return "#f1f5f9";
-  if (!d.inScope) return "#e2e8f0";
+function nodeFill(d: G6NodeDatum, p: CanvasPalette): string {
+  if (d.fold) return p.foldFill;
+  if (!d.inScope) return p.outScopeFill;
   if (d.tested) return kindMeta[d.kind].hex;
-  return "#94a3b8";
+  return p.untestedFill;
 }
-function nodeStroke(d: G6NodeDatum): string {
-  if (d.fold || !d.inScope) return "#94a3b8";
-  if (d.tested) return "#0f766e";
-  return "#64748b";
+function nodeStroke(d: G6NodeDatum, p: CanvasPalette): string {
+  if (d.fold || !d.inScope) return p.foldStroke;
+  if (d.tested) return p.testedStroke;
+  return p.defaultStroke;
 }
 
 // ---------------------------------------------------------------------------
@@ -466,6 +498,10 @@ function GraphInner({ taskId, coverageEnabled = true }: { taskId: string; covera
   const [selectedFoldId, setSelectedFoldId] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
 
+  const resolvedThemeMode = usePreferencesStore((s) => s.resolvedThemeMode);
+  const isDark = resolvedThemeMode === "dark";
+  const palette = React.useMemo(() => CANVAS_THEMES[isDark ? "dark" : "light"], [isDark]);
+
   const containerRef = React.useRef<HTMLDivElement>(null);
   const graphRef = React.useRef<G6Graph | null>(null);
   // click 处理需要最新的 key→RenderNode 映射（G6 事件回调闭包外读 ref）。
@@ -542,12 +578,12 @@ function GraphInner({ taskId, coverageEnabled = true }: { taskId: string; covera
         container: containerRef.current,
         autoResize: true,
         autoFit: "view",
-        background: "#f0f2f7",
+        background: palette.background,
         node: {
           style: {
             size: (d: unknown) => nd(d).size,
-            fill: (d: unknown) => nodeFill(nd(d)),
-            stroke: (d: unknown) => nodeStroke(nd(d)),
+            fill: (d: unknown) => nodeFill(nd(d), palette),
+            stroke: (d: unknown) => nodeStroke(nd(d), palette),
             lineWidth: (d: unknown) => (nd(d).fold || !nd(d).inScope ? 1 : 1.5),
             lineDash: (d: unknown) => (nd(d).fold || !nd(d).inScope ? [3, 3] : [0]),
             iconSrc: (d: unknown) => (nd(d).fold ? FOLD_ICON : KIND_ICON[nd(d).kind]),
@@ -556,15 +592,15 @@ function GraphInner({ taskId, coverageEnabled = true }: { taskId: string; covera
             labelText: (d: unknown) => nd(d).lbl,
             labelFontSize: 10,
             labelPlacement: "bottom",
-            labelFill: "#475569",
+            labelFill: palette.labelFill,
             labelBackground: true,
-            labelBackgroundFill: "rgba(255,255,255,0.75)",
+            labelBackgroundFill: palette.labelBackgroundFill,
             labelBackgroundRadius: 3,
             labelPadding: [1, 3],
           },
         },
         edge: {
-          style: { stroke: "#cbd5e1", lineWidth: 1, endArrow: false },
+          style: { stroke: palette.edgeStroke, lineWidth: 1, endArrow: false },
         },
         layout: {
           type: "d3-force",
@@ -607,7 +643,8 @@ function GraphInner({ taskId, coverageEnabled = true }: { taskId: string; covera
       graph?.destroy();
       graphRef.current = null;
     };
-  }, [applyData]);
+    // theme 变化时重建图：Canvas 配色在初始化时固化，无法热更新。
+  }, [applyData, palette]);
 
   // 可见集合变化 → 重新灌数据 + 布局。sig 只作为重排触发器（applyData 读 gDataRef）。
   // biome-ignore lint/correctness/useExhaustiveDependencies: sig 是刻意的重排触发依赖
@@ -681,12 +718,12 @@ function GraphInner({ taskId, coverageEnabled = true }: { taskId: string; covera
                 <span className="size-3 rounded-full bg-emerald-500" /> 已测（高亮）
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="size-3 rounded-full bg-neutral-400" /> 未测
+                <span className="size-3 rounded-full bg-neutral-400 dark:bg-neutral-600" /> 未测
               </span>
             </>
           )}
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-3 rounded-full border border-dashed border-neutral-400 bg-neutral-200" /> 范围外
+            <span className="size-3 rounded-full border border-dashed border-neutral-400 bg-neutral-200 dark:border-neutral-500 dark:bg-neutral-700" /> 范围外
           </span>
         </div>
         <p className="text-muted-foreground/80 border-border/60 border-t pt-2 leading-relaxed">
