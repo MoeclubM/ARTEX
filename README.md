@@ -19,11 +19,11 @@
 
 ### 关于本仓库
 
-本仓库是 ARTEX 开源版闭源前**最后一个版本的纯源码备份**，后续由 **棉花糖**（[@mhtsec](https://github.com/mhtsec)，公众号 **棉花糖fans**）维护，欢迎参与共建：
+本仓库是 ARTEX 开源版闭源前**最后一个版本的纯源码备份**，由 **MoeclubM** fork 自 [@mhtsec](https://github.com/mhtsec)（棉花糖）的 mhtsec/ARTEX 并维护，欢迎参与共建：
 
-- 🐛 问题反馈 / 功能建议：[提交 Issue](https://github.com/mhtsec/ARTEX/issues)
-- 🛠 代码共建：欢迎提交 [Pull Request](https://github.com/mhtsec/ARTEX/pulls)
-- 💬 交流群：见文末 [交流与社区](#交流与社区)
+- 🐛 问题反馈 / 功能建议：[提交 Issue](https://github.com/MoeclubM/ARTEX/issues)
+- 🛠 代码共建：欢迎提交 [Pull Request](https://github.com/MoeclubM/ARTEX/pulls)
+- 💬 交流与社区：见文末 [交流与社区](#交流与社区)
 
 > 原 Docker 镜像源 `autumn27/artex` 已失效，现由本仓库自维护镜像 `mianhuatang11/artex`（Docker Hub）；拉取失败时可 `docker compose build` 从纯源码本地构建，无任何外部预编译依赖。
 >
@@ -78,7 +78,7 @@
 ### 方式一：一键安装脚本（推荐）
 
 ```bash
-git clone https://github.com/mhtsec/ARTEX.git
+git clone https://github.com/MoeclubM/ARTEX.git
 cd ARTEX
 ./install.sh
 ```
@@ -93,7 +93,7 @@ cd ARTEX
 ### 方式二：Docker Compose（手动）
 
 ```bash
-git clone https://github.com/mhtsec/ARTEX.git
+git clone https://github.com/MoeclubM/ARTEX.git
 cd ARTEX
 cp .env.example .env          # 填 POSTGRES_PASSWORD、可选 ANTHROPIC_API_KEY
 docker compose up -d          # 拉取 mianhuatang11/artex 镜像 + postgres
@@ -113,7 +113,7 @@ docker compose up -d          # 拉取 mianhuatang11/artex 镜像 + postgres
 
 ### 方式三：下载预编译二进制（Releases）
 
-到本仓库 [Releases](https://github.com/mhtsec/ARTEX/releases) 下载对应平台的 zip：解压后得到 `artex` + `start.sh`（Windows 为 `start.bat`）+ `skills/` + `config.example.json`：
+到本仓库 [Releases](https://github.com/MoeclubM/ARTEX/releases) 下载对应平台的 zip：解压后得到 `artex` + `start.sh`（Windows 为 `start.bat`）+ `skills/` + `config.example.json`：
 
 ```bash
 cp config.example.json config.json   # 填好 database 连接
@@ -201,7 +201,7 @@ docker image prune -f          # 清理旧镜像（可选）
 
 ### 方式四：预编译二进制（Releases）
 
-到 [Releases](https://github.com/mhtsec/ARTEX/releases) 下载新版本 zip，停掉旧进程后覆盖 `artex` 与 `skills/`（保留你的 `config.json` 与 `data/`），重启即可：
+到 [Releases](https://github.com/MoeclubM/ARTEX/releases) 下载新版本 zip，停掉旧进程后覆盖 `artex` 与 `skills/`（保留你的 `config.json` 与 `data/`），重启即可：
 
 ```bash
 cp -r <解压目录>/skills ./ && cp <解压目录>/artex ./
@@ -483,17 +483,10 @@ flowchart TB
 
 ## 交流与社区
 
-本仓库后续由 **棉花糖** 持续维护，欢迎通过以下方式交流共建：
+本仓库由 **MoeclubM** fork 自 [@mhtsec](https://github.com/mhtsec)（棉花糖），欢迎通过以下方式交流共建：
 
-- 🐛 **问题反馈 / 功能建议**：[提交 Issue](https://github.com/mhtsec/ARTEX/issues)
-- 🛠 **代码共建**：欢迎提交 [Pull Request](https://github.com/mhtsec/ARTEX/pulls)
-- 💬 **交流群**：扫码关注微信公众号 **棉花糖fans**，在**菜单栏点击「找棉花糖」**加好友，添加后发送 **「ARTEX」** 即可受邀进群
-
-<div align="center">
-
-<img src="screenshots/wx_mhtsec.png" alt="微信公众号 棉花糖fans" width="560" />
-
-</div>
+- 🐛 **问题反馈 / 功能建议**：[提交 Issue](https://github.com/MoeclubM/ARTEX/issues)
+- 🛠 **代码共建**：欢迎提交 [Pull Request](https://github.com/MoeclubM/ARTEX/pulls)
 
 ---
 ## 参考
