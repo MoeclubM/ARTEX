@@ -4,8 +4,6 @@
 
 面向企业攻击面的自主渗透测试智能体（Go 后端 + Next.js 前端）
 
-🌐 **在线 Demo（模拟数据）**： <https://artex-demo.mhtsec.com>
-
 </div>
 
 ---
@@ -19,20 +17,13 @@
 
 ### 关于本仓库
 
-本仓库是 ARTEX 开源版闭源前**最后一个版本的纯源码备份**，由 **MoeclubM** fork 自 [@mhtsec](https://github.com/mhtsec)（棉花糖）的 mhtsec/ARTEX 并维护，欢迎参与共建：
+本仓库是 ARTEX 开源版闭源前**最后一个版本的纯源码备份**，由 **MoeclubM** fork 自 [@mhtsec](https://github.com/mhtsec)（棉花糖）的 [mhtsec/ARTEX](https://github.com/mhtsec/ARTEX) 并维护。
 
-- 🐛 问题反馈 / 功能建议：[提交 Issue](https://github.com/MoeclubM/ARTEX/issues)
-- 🛠 代码共建：欢迎提交 [Pull Request](https://github.com/MoeclubM/ARTEX/pulls)
-
-> 原 Docker 镜像源 `autumn27/artex` 已失效，现由本仓库自维护镜像 `mianhuatang11/artex`（Docker Hub）；拉取失败时可 `docker compose build` 从纯源码本地构建，无任何外部预编译依赖。
->
-> 致谢原作者的开源贡献：原作者微信公众号为 **SecSentry**，原项目地址 [Autumn-27/ARTEX](https://github.com/Autumn-27/ARTEX)。
+> 原项目地址：[Autumn-27/ARTEX](https://github.com/Autumn-27/ARTEX)，原作者微信公众号为 **SecSentry**。
 
 ---
 
 ## 截图预览
-
-> 完整交互见[在线 Demo](https://artex-demo.mhtsec.com)。
 
 | 仪表盘（总览 / Token 消耗 / 活动流） | 任务列表 |
 | :---: | :---: |
@@ -293,11 +284,6 @@ server {
 - 前端：`cd web && npm run dev`（`/api` 反代到后端，带热更新）
 - 测试：`go test ./...`
 - Mock 预览（无后端）：`cd web && NEXT_PUBLIC_MOCK=1 npm run dev`
-- 在线 Demo 重新部署（Cloudflare Pages，静态导出 + Mock 数据）：
-  ```bash
-  cd web && NEXT_PUBLIC_MOCK=1 npm run build:static
-  CLOUDFLARE_API_TOKEN=<token> npx wrangler pages deploy out --project-name=artex-demo --branch=main
-  ```
 
 ---
 
