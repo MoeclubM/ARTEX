@@ -86,13 +86,13 @@ cd ARTEX
 git clone https://github.com/MoeclubM/ARTEX.git
 cd ARTEX
 cp .env.example .env          # 填 POSTGRES_PASSWORD、可选 ANTHROPIC_API_KEY
-docker compose up -d          # 拉取 mianhuatang11/artex 镜像 + postgres
+docker compose build          # 从纯源码构建 artex 镜像（首次较慢）
+docker compose up -d          # 启动 artex + postgres
 # → http://localhost:8787
 ```
 
-> 原镜像源 `autumn27/artex` 已从 Docker Hub 删除，镜像现由本仓库自维护为 **`mianhuatang11/artex`**。  
-> 镜像源不可用（或想自行改代码）时，本地从纯源码构建即可：`docker compose build && docker compose up -d`。  
-> Dockerfile 为多阶段构建（前端静态导出 → Go 静态编译 → 运行镜像），默认走国内友好依赖源，可加 `--build-arg GOPROXY=... / --build-arg NPM_REGISTRY=...` 覆盖。正式镜像支持 `linux/amd64` 和 `linux/arm64`，Docker 会自动选择对应架构；固定版本可在 `.env` 设置 `ARTEX_TAG=v0.3.16`。
+> 本仓库不发布预构建镜像，Docker 部署始终从纯源码本地构建（需要 Docker 与网络下载依赖）。  
+> Dockerfile 为多阶段构建（前端静态导出 → Go 静态编译 → 运行镜像），默认走国内友好依赖源，可加 `--build-arg GOPROXY=... / --build-arg NPM_REGISTRY=...` 覆盖。默认构建当前主机架构；需要其他架构时用 `docker buildx build --platform linux/amd64`（或 `linux/arm64`）单独构建。
 
 镜像已含常用工具（ripgrep/curl/vim/npm/nmap…）；`./skills` 与 `./data` 以绑定挂载持久化。
 
@@ -141,9 +141,7 @@ ARTEX_TARGETS=linux/amd64,windows/amd64 ./build.sh --release
 ./build.sh --target linux/amd64 --upx
 ```
 
-Docker 镜像随 Release 发布，使用同一份 `SHA256SUMS` 校验过的 Linux 二进制、启动脚本和 skills；两个架构分别在原生 runner 上完成 PostgreSQL、登录与配置持久化、内嵌网页、Chromium 和停止/重启检查，通过后才合并版本标签。`latest` 仅指向当前稳定 Release，补发历史版本不会将它回退。
-
-维护者需在仓库 Actions 配置变量 `DOCKERHUB_IMAGE=mianhuatang11/artex`，以及加密 Secrets `DOCKERHUB_USERNAME`、`DOCKERHUB_TOKEN`。正常推送版本 tag 会自动发布；仅补发 Docker 镜像时，在 Actions 中手工运行 `docker-release` 并填写已有 Release 标签。任一架构构建或验证失败都不会更新 `latest`，按日志修复后重跑。
+本仓库不向任何镜像仓库发布预构建镜像。需要验证 Docker 构建时，可在 Actions 手动运行 `docker-build`：两个架构分别在原生 runner 上从源码构建，并执行 PostgreSQL、登录与配置持久化、内嵌网页、Chromium 和停止/重启检查，不推送任何产物。
 
 本地从源码构建可用 `--build-arg ARTEX_BUILD_VERSION=v0.3.16` 写入版本；默认 `dev`。Playwright 工具版本固定在 Dockerfile 中，浏览器默认从官方 CDN 下载，需要镜像站时可指定 `--build-arg PLAYWRIGHT_DOWNLOAD_HOST=...`。排查镜像时可执行 `python3 scripts/smoke-docker.py <镜像> <版本号>`，检查只使用临时数据库和内部网络，不读取本地 `.env` 或连接真实目标。
 
@@ -163,7 +161,7 @@ Docker 镜像随 Release 发布，使用同一份 `SHA256SUMS` 校验过的 Linu
 - **随时可回退**：上一版本保留为 `artex.old`，卡片上有「回滚到上一版本」。注意数据库结构不会回退。
 - **更新会中断正在运行的任务**——更新即重启，请在空闲时进行。
 - **开发构建不给更新**：版本号是 `dev` 或 `git describe` 带后缀时禁用，避免正式版覆盖掉本地调试的二进制。
-- **Docker 下只换程序、不换镜像**：镜像里的 playwright / nmap 等工具链不会跟着升级，且 `docker compose up -d` 重建容器后会退回镜像自带的版本。要连镜像一起升级仍请用 `docker compose pull artex && docker compose up -d artex`。
+- **Docker 下只换程序、不换镜像**：镜像里的 playwright / nmap 等工具链不会跟着升级，且重建容器后会退回镜像自带的二进制。要连镜像一起升级，请重新构建：`docker compose build artex && docker compose up -d artex`。
 - 访问 GitHub 需要代理时，在同一页面配置**全局代理**即可，更新链路会走它。更新只从 GitHub 域名下载并强制 HTTPS。
 
 ### 方式二：一键更新脚本
@@ -175,17 +173,16 @@ cd ARTEX
 
 脚本先可选 `git pull` 拉取最新代码，再让你选 **① Docker 更新** 或 **② 本地编译更新**（与 `install.sh` 对应）：
 
-- **① Docker**：可指定目标镜像 tag（回车沿用 `.env` 的 `ARTEX_TAG`，缺省 `latest`）→ `docker compose pull` → `docker compose up -d`（换新镜像重启即自动迁移）。
+- **① Docker**：`docker compose build artex` 从当前源码重建镜像 → `docker compose up -d artex`（重启即自动迁移）。
 - **② 本地**：重建前端静态产物 → 重新编译 `./artex`（完成后重启进程生效）。
 
 ### 方式三：Docker Compose（手动）
 
 ```bash
 cd ARTEX
-git pull                       # 更新 compose / 脚本（可选）
-# 指定版本：在 .env 设 ARTEX_TAG=v0.3.16；不设则用 latest
-docker compose pull artex
-docker compose up -d artex     # 换新镜像重启 → 自动迁移 schema
+git pull                       # 拉取最新源码
+docker compose build artex     # 从源码重建镜像
+docker compose up -d artex     # 重启 → 自动迁移 schema
 docker image prune -f          # 清理旧镜像（可选）
 ```
 

@@ -1,15 +1,15 @@
 # syntax=docker/dockerfile:1
 #
 # 多阶段构建：前端静态导出 → Go 单二进制（内嵌前端）→ 运行镜像。
-# 原 Docker Hub 镜像源（autumn27/artex）已失效，本仓库自此支持从纯源码自助构建：
+# 本仓库不发布预构建镜像，从纯源码自助构建：
 #   docker compose build        # 或 docker build -t artex:local .
 # TARGETARCH 由 buildx 自动注入（amd64/arm64），Go 交叉编译无需 QEMU；
 # 运行层只装工具，编译全部在构建阶段完成。
 # 国内网络可覆盖模块源（默认已对国内友好）：
 #   --build-arg GOPROXY=https://goproxy.cn,direct
 #   --build-arg NPM_REGISTRY=https://registry.npmmirror.com
-# Release 使用 --build-arg ARTEX_BINARY_SOURCE=prebuilt，复用校验过的发布二进制；
-# 默认仍从源码构建，无需下载任何预编译的 ARTEX 产物。
+# 可选：--build-arg ARTEX_BINARY_SOURCE=prebuilt 复用 dist/<arch>/artex；
+# 默认从源码构建，无需下载任何预编译的 ARTEX 产物。
 ARG ARTEX_BINARY_SOURCE=source
 
 ########## 阶段 1：前端静态导出 ##########
